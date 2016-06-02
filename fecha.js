@@ -297,6 +297,167 @@
     return date;
   };
 
+  /**
+   * Change a date to the start of the unit.
+   * @method startOf
+   * @param {date} date Date object
+   * @param {string} units Unit to change
+   * @returns {Date} Updated date object
+   */
+  fecha.startOf = function (date, units) {
+    units = units.toLowerCase();
+    // the following switch intentionally omits break keywords to utilize falling through the cases.
+    switch (units) {
+      case 'year':
+        date.setMonth(0);
+        /* falls through */
+      case 'quarter':
+      case 'month':
+        date.setDate(1);
+        /* falls through */
+      case 'week':
+      case 'isoWeek':
+      case 'day':
+        date.setHours(0);
+        /* falls through */
+      case 'hour':
+        date.setMinutes(0);
+        /* falls through */
+      case 'minute':
+        date.setSeconds(0);
+        /* falls through */
+      case 'second':
+        date.setMilliseconds(0);
+    }
+
+    // weeks are a special case
+    if (units === 'week') {
+      date.setDate(date.getDate() - date.getDay());
+    }
+    if (units === 'isoWeek') {
+      var distance = date.getDay();
+      distance = distance % 7 ? distance : distance - 7;
+      date.setDate(date.getDate() - distance);
+    }
+    // quarters are also special
+    if (units === 'quarter') {
+      date.setMonth(Math.floor(date.getMonth() / 3) * 3);
+    }
+
+    return date;
+  };
+
+  /**
+   * Increment a date by value of units.
+   * @method add
+   * @param {date} date Date object
+   * @param {int} value Value to increase date by
+   * @param {string} units Unit to change
+   * @returns {Date} Updated date object
+   */
+  fecha.add = function (date, value, units) {
+    units = units.toLowerCase();
+    switch (units) {
+      case 'year':
+        date.setYear(date.getYear() + value);
+        break;
+      case 'quarter':
+        date.setMonth(date.getMonth() + value * 3);
+        break;
+      case 'month':
+        date.setMonth(date.getMonth() + value);
+        break;
+      case 'week':
+      case 'isoWeek':
+        date.setDate(date.getDate() + value * 7);
+        break;
+      case 'day':
+        date.setDate(date.getDate() + value);
+        break;
+      case 'hour':
+        date.setHours(date.getHours() + value);
+        break;
+      case 'minute':
+        date.setMinute(date.getMinute() + value);
+        break;
+      case 'second':
+        date.setSecond(date.getSecond() + value);
+        break;
+      case 'millisecond':
+        date.setMilliseconds(date.getMilliseconds() + value);
+        break;
+    }
+    return date;
+  };
+
+  /**
+   * Get the difference between two dates in units.
+   * @method diff
+   * @param {date} startDate Date object
+   * @param {date} endDate Date object
+   * @param {string} units Unit to get difference in
+   * @param {bool} noRound Return a float instead of rounding
+   * @returns {int} Difference in units
+   */
+  fecha.diff = function (startDate, endDate, units, noRound) {
+    units = units.toLowerCase();
+    noRound = typeof noRound === 'undefined' ? false : noRound;
+    var diff = endDate - startDate;
+    switch (units) {
+      case 'year':
+        diff = diff / 31556952000;
+        break;
+      case 'quarter':
+        diff = diff / 7889238000;
+        break;
+      case 'month':
+        diff = diff / 2629746000;
+        break;
+      case 'week':
+      case 'isoWeek':
+        diff = diff / 604800000;
+        break;
+      case 'day':
+        diff = diff / 86400000;
+        break;
+      case 'hour':
+        diff = diff / 3600000;
+        break;
+      case 'minute':
+        diff = diff / 60000;
+        break;
+      case 'second':
+        diff = diff / 1000;
+        break;
+    }
+    return noRound ? diff : Math.floor(diff);
+  };
+
+  /**
+   * Change a date to the end of the unit.
+   * @method endOf
+   * @param {date} date Date object
+   * @param {string} units Unit to change
+   * @returns {Date} Updated date object
+   */
+  fecha.endOf = function (date, units) {
+    units = units.toLowerCase();
+    if (typeof units === 'undefined' || units === 'millisecond') {
+      return date;
+    }
+    return add(add(startOf(date, units), 1, units), -1, 'millisecond');
+  };
+
+  /**
+   * Clone a date.
+   * @method clone
+   * @param {date} date Date object
+   * @returns {Date} New date object
+   */
+  fecha.clone = function (date) {
+    return new Date(date.getTime());
+  };
+
   /* istanbul ignore next */
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = fecha;
