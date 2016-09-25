@@ -6,11 +6,12 @@
    * @class fecha
    */
   var fecha = {};
-  var token = /d{1,4}|M{1,4}|yy(?:yy)?|q(?:q)?|F{1,3}|zzz|([HhMsDm])\1?|tt|"[^"]*"|'[^']*'/g;
+  var token = /d{1,4}|M{1,4}|YY(?:YY)?|S{1,3}|Do|ZZ|([HhMsDm])\1?|[aA]|"[^"]*"|'[^']*'/g;
   var twoDigits = /\d\d?/;
   var threeDigits = /\d{3}/;
   var fourDigits = /\d{4}/;
   var word = /[0-9]*['a-z\u00A0-\u05FF\u0700-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+|[\u0600-\u06FF\/]+(\s*?[\u0600-\u06FF]+){1,2}/i;
+  var literal = /\[([^]*?)\]/gm;
   var noop = function () {
   };
 
@@ -56,95 +57,101 @@
   };
 
   var formatFlags = {
-    d: function (dateObj) {
+    D: function(dateObj) {
       return dateObj.getDate();
     },
-    dd: function (dateObj) {
+    DD: function(dateObj) {
       return pad(dateObj.getDate());
     },
-    ddd: function (dateObj, i18n) {
+    Do: function(dateObj, i18n) {
+      return i18n.DoFn(dateObj.getDate());
+    },
+    d: function(dateObj) {
+      return dateObj.getDay();
+    },
+    dd: function(dateObj) {
+      return pad(dateObj.getDay());
+    },
+    ddd: function(dateObj, i18n) {
       return i18n.dayNamesShort[dateObj.getDay()];
     },
-    dddd: function (dateObj, i18n) {
+    dddd: function(dateObj, i18n) {
       return i18n.dayNames[dateObj.getDay()];
     },
-    M: function (dateObj) {
+    M: function(dateObj) {
       return dateObj.getMonth() + 1;
     },
-    MM: function (dateObj) {
+    MM: function(dateObj) {
       return pad(dateObj.getMonth() + 1);
     },
-    MMM: function (dateObj, i18n) {
+    MMM: function(dateObj, i18n) {
       return i18n.monthNamesShort[dateObj.getMonth()];
     },
-    MMMM: function (dateObj, i18n) {
+    MMMM: function(dateObj, i18n) {
       return i18n.monthNames[dateObj.getMonth()];
     },
-    yy: function (dateObj) {
+    YY: function(dateObj) {
       return String(dateObj.getFullYear()).substr(2);
     },
-    yyyy: function (dateObj) {
+    YYYY: function(dateObj) {
       return dateObj.getFullYear();
     },
-    q: function (dateObj) {
-      return Math.floor((dateObj.getMonth() + 1) / 4) + 1;
-    },
-    qq: function (dateObj) {
-      return pad(Math.floor((dateObj.getMonth() + 1) / 4) + 1, 2);
-    },
-    h: function (dateObj) {
+    h: function(dateObj) {
       return dateObj.getHours() % 12 || 12;
     },
-    hh: function (dateObj) {
+    hh: function(dateObj) {
       return pad(dateObj.getHours() % 12 || 12);
     },
-    H: function (dateObj) {
+    H: function(dateObj) {
       return dateObj.getHours();
     },
-    HH: function (dateObj) {
+    HH: function(dateObj) {
       return pad(dateObj.getHours());
     },
-    m: function (dateObj) {
+    m: function(dateObj) {
       return dateObj.getMinutes();
     },
-    mm: function (dateObj) {
+    mm: function(dateObj) {
       return pad(dateObj.getMinutes());
     },
-    s: function (dateObj) {
+    s: function(dateObj) {
       return dateObj.getSeconds();
     },
-    ss: function (dateObj) {
+    ss: function(dateObj) {
       return pad(dateObj.getSeconds());
     },
-    F: function (dateObj) {
+    S: function(dateObj) {
       return Math.round(dateObj.getMilliseconds() / 100);
     },
-    FF: function (dateObj) {
+    SS: function(dateObj) {
       return pad(Math.round(dateObj.getMilliseconds() / 10), 2);
     },
-    FFF: function (dateObj) {
+    SSS: function(dateObj) {
       return pad(dateObj.getMilliseconds(), 3);
     },
-    tt: function (dateObj, i18n) {
+    a: function(dateObj, i18n) {
       return dateObj.getHours() < 12 ? i18n.amPm[0] : i18n.amPm[1];
     },
-    TT: function (dateObj, i18n) {
+    A: function(dateObj, i18n) {
       return dateObj.getHours() < 12 ? i18n.amPm[0].toUpperCase() : i18n.amPm[1].toUpperCase();
     },
-    zz: function (dateObj) {
+    ZZ: function(dateObj) {
       var o = dateObj.getTimezoneOffset();
       return (o > 0 ? '-' : '+') + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4);
     }
   };
 
   var parseFlags = {
-    d: [twoDigits, function (d, v) {
+    D: [twoDigits, function (d, v) {
       d.day = v;
+    }],
+    Do: [new RegExp(twoDigits.source + word.source), function (d, v) {
+      d.day = parseInt(v, 10);
     }],
     M: [twoDigits, function (d, v) {
       d.month = v - 1;
     }],
-    yy: [twoDigits, function (d, v) {
+    YY: [twoDigits, function (d, v) {
       var da = new Date(), cent = +('' + da.getFullYear()).substr(0, 2);
       d.year = '' + (v > 68 ? cent - 1 : cent) + v;
     }],
@@ -157,22 +164,23 @@
     s: [twoDigits, function (d, v) {
       d.second = v;
     }],
-    yyyy: [fourDigits, function (d, v) {
+    YYYY: [fourDigits, function (d, v) {
       d.year = v;
     }],
-    F: [/\d/, function (d, v) {
+    S: [/\d/, function (d, v) {
       d.millisecond = v * 100;
     }],
-    FF: [/\d{2}/, function (d, v) {
+    SS: [/\d{2}/, function (d, v) {
       d.millisecond = v * 10;
     }],
-    FFF: [threeDigits, function (d, v) {
+    SSS: [threeDigits, function (d, v) {
       d.millisecond = v;
     }],
+    d: [twoDigits, noop],
     ddd: [word, noop],
     MMM: [word, monthUpdate('monthNamesShort')],
     MMMM: [word, monthUpdate('monthNames')],
-    tt: [word, function (d, v, i18n) {
+    a: [word, function (d, v, i18n) {
       var val = v.toLowerCase();
       if (val === i18n.amPm[0]) {
         d.isPm = false;
@@ -180,7 +188,7 @@
         d.isPm = true;
       }
     }],
-    zzz: [/[\+\-]\d\d:?\d\d/, function (d, v) {
+    ZZ: [/[\+\-]\d\d:?\d\d/, function (d, v) {
       var parts = (v + '').match(/([\+\-]|\d\d)/gi), minutes;
 
       if (parts) {
@@ -191,21 +199,24 @@
   };
   parseFlags.dd = parseFlags.d;
   parseFlags.dddd = parseFlags.ddd;
+  parseFlags.DD = parseFlags.D;
   parseFlags.mm = parseFlags.m;
   parseFlags.hh = parseFlags.H = parseFlags.HH = parseFlags.h;
   parseFlags.MM = parseFlags.M;
   parseFlags.ss = parseFlags.s;
+  parseFlags.A = parseFlags.a;
+
 
   // Some common format strings
   fecha.masks = {
-    'default': 'ddd MMM dd yyyy HH:mm:ss',
-    shortDate: 'M/d/yy',
-    mediumDate: 'MMM d, yyyy',
-    longDate: 'MMMM d, yyyy',
-    fullDate: 'dddd, MMMM d, yyyy',
+    'default': 'ddd MMM DD YYYY HH:mm:ss',
+    shortDate: 'M/D/YY',
+    mediumDate: 'MMM D, YYYY',
+    longDate: 'MMMM D, YYYY',
+    fullDate: 'dddd, MMMM D, YYYY',
     shortTime: 'HH:mm',
     mediumTime: 'HH:mm:ss',
-    longTime: 'HH:mm:ss.FFF'
+    longTime: 'HH:mm:ss.SSS'
   };
 
   /***
@@ -227,8 +238,20 @@
 
     mask = fecha.masks[mask] || mask || fecha.masks['default'];
 
-    return mask.replace(token, function ($0) {
+    var literals = [];
+
+    // Make literals inactive by replacing them with ??
+    mask = mask.replace(literal, function($0, $1) {
+      literals.push($1);
+      return '??';
+    });
+    // Apply formatting rules
+    mask = mask.replace(token, function ($0) {
       return $0 in formatFlags ? formatFlags[$0](dateObj, i18n) : $0.slice(1, $0.length - 1);
+    });
+    // Inline literal values back into the formatted value
+    return mask.replace(/\?\?/g, function() {
+      return literals.shift();
     });
   };
 
@@ -457,7 +480,7 @@
   fecha.clone = function (date) {
     return new Date(date.getTime());
   };
-
+  
   /* istanbul ignore next */
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = fecha;
