@@ -156,6 +156,17 @@
             var o = dateObj.getTimezoneOffset();
             return (o > 0 ? '-' : '+') + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4);
         }
+        l: function (dateObj) {
+            var onejan = new Date(dateObj.getFullYear(), 0, 1);
+            return Math.ceil((((dateObj - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+        },
+        ll: function (dateObj) {
+            var onejan = new Date(dateObj.getFullYear(), 0, 1);
+            return pad(Math.ceil((((dateObj - onejan) / 86400000) + onejan.getDay() + 1) / 7), 2);
+        },
+        q: function (dateObj) {
+            return (Math.ceil(date.getMonth() + 1 / 3));
+        }
     };
 
     var parseFlags = {
